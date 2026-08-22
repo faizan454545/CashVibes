@@ -13,7 +13,7 @@ class TrustProxies
     {
         if (App::environment('production')) {
             $request->setTrustedProxies(
-                explode(',', env('TRUSTED_PROXIES', '*')),
+                ['*'],
                 Request::HEADER_X_FORWARDED_FOR |
                 Request::HEADER_X_FORWARDED_HOST |
                 Request::HEADER_X_FORWARDED_PORT |
