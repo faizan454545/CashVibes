@@ -27,3 +27,5 @@ database/database.sqlite
 storage/logs/*
 !
 storage/logs/.gitignore
+.vercel
+.env*

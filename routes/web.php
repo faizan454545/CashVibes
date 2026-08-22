@@ -72,10 +72,7 @@ Route::middleware(['auth', 'check.account.status'])->group(function () {
             'pkr_value' => number_format($pkrValue, 2),
             'is_banned' => $user->account_status === 'suspended',
             'ban_reason' => $user->ban_reason ?: 'Violation of Terms of Service',
-        ])
-        ->header('Cache-Control', 'no-cache, no-store, must-revalidate')
-        ->header('Pragma', 'no-cache')
-        ->header('Expires', '0');
+        ]);
     })->name('api.ban-status');
 
     // Dashboard

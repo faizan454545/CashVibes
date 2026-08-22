@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Laravel\Socialite\Facades\Socialite;
+use Laravel\Socialite\Two\InvalidStateException;
 
 class GoogleAuthController extends Controller
 {
@@ -34,11 +35,21 @@ class GoogleAuthController extends Controller
             $ip = $request->ip();
 
             if ($this->fraudService->shouldBlockRegistration($ip)) {
+                Log::warning('Google OAuth blocked by fraud service', [
+                    'ip' => $ip,
+                    'email' => $googleUser->getEmail(),
+                ]);
+
                 return redirect()->route('login')
                     ->withErrors(['auth' => 'Access temporarily restricted. Please try again later.']);
             }
 
             if ($this->fraudService->detectMultiAccount($ip, $googleUser->getId())) {
+                Log::warning('Google OAuth blocked - multi-account detected', [
+                    'ip' => $ip,
+                    'google_id' => $googleUser->getId(),
+                ]);
+
                 return redirect()->route('login')
                     ->withErrors(['auth' => 'Multiple account usage detected.']);
             }
@@ -50,12 +61,23 @@ class GoogleAuthController extends Controller
 
                 if ($user) {
                     $user->update(['google_id' => $googleUser->getId()]);
+                    Log::info('Google account linked to existing email', [
+                        'user_id' => $user->id,
+                        'email' => $googleUser->getEmail(),
+                    ]);
                 } else {
                     $user = $this->createUser($googleUser, $ip);
+                    Log::info('New user created via Google OAuth', [
+                        'user_id' => $user->id,
+                        'email' => $googleUser->getEmail(),
+                    ]);
                 }
             }
 
-            $user->update(['last_login_at' => now()]);
+            $user->update([
+                'last_login_at' => now(),
+                'last_login_ip' => $ip,
+            ]);
 
             Auth::login($user, true);
 
@@ -65,11 +87,24 @@ class GoogleAuthController extends Controller
 
             return redirect()->route('dashboard');
 
-        } catch (\Exception $e) {
-            Log::error('Google OAuth Error: '.$e->getMessage());
+        } catch (InvalidStateException $e) {
+            Log::error('Google OAuth state mismatch', [
+                'error' => $e->getMessage(),
+                'url' => $request->fullUrl(),
+            ]);
 
             return redirect()->route('login')
-                ->withErrors(['auth' => 'Authentication failed. Please try again.']);
+                ->withErrors(['auth' => 'Authentication session expired. Please try again.']);
+
+        } catch (\Exception $e) {
+            Log::error('Google OAuth callback error', [
+                'error' => $e->getMessage(),
+                'class' => get_class($e),
+                'url' => $request->fullUrl(),
+            ]);
+
+            return redirect()->route('login')
+                ->withErrors(['auth' => 'Google sign-in failed. Please try again or use email login.']);
         }
     }
 
@@ -190,13 +225,22 @@ class GoogleAuthController extends Controller
             ]);
 
         } catch (ValidationException $e) {
+            Log::warning('Firebase Auth validation error', [
+                'error' => $e->getMessage(),
+                'ip' => $request->ip(),
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid authentication data: '.$e->getMessage(),
             ], 422);
 
         } catch (\Exception $e) {
-            Log::error('Firebase Auth Error: '.$e->getMessage());
+            Log::error('Firebase Auth Error', [
+                'error' => $e->getMessage(),
+                'class' => get_class($e),
+                'ip' => $request->ip(),
+            ]);
 
             return response()->json([
                 'success' => false,

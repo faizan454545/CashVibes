@@ -19,11 +19,6 @@ class EmailLoginController extends Controller
         private ReferralService $referralService
     ) {}
 
-    public function showLoginForm()
-    {
-        return view('auth.login');
-    }
-
     public function login(Request $request)
     {
         $request->validate([
@@ -69,11 +64,6 @@ class EmailLoginController extends Controller
         }
 
         return redirect()->intended(route('dashboard'));
-    }
-
-    public function showRegisterForm()
-    {
-        return view('auth.register');
     }
 
     public function register(Request $request)

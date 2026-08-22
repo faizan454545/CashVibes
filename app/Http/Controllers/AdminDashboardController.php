@@ -99,10 +99,7 @@ class AdminDashboardController extends Controller
                 'success' => true,
                 'message' => "User {$user->name} has been {$action}.",
                 'account_status' => $user->account_status,
-            ])
-            ->header('Cache-Control', 'no-cache, no-store, must-revalidate')
-            ->header('Pragma', 'no-cache')
-            ->header('Expires', '0');
+            ]);
         }
 
         return back()->with('success', "User {$user->name} has been {$action}.");
@@ -152,10 +149,7 @@ class AdminDashboardController extends Controller
                 'success' => true,
                 'message' => "Balance updated for {$user->name}: {$oldBalance} → {$user->coin_balance} coins.",
                 'coin_balance' => $user->coin_balance,
-            ])
-            ->header('Cache-Control', 'no-cache, no-store, must-revalidate')
-            ->header('Pragma', 'no-cache')
-            ->header('Expires', '0');
+            ]);
         }
 
         return back()->with('success', "Balance updated for {$user->name}: {$oldBalance} → {$user->coin_balance} coins.");

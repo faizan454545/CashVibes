@@ -14,21 +14,18 @@ class CheckAccountStatus
             $user = Auth::user()->fresh();
 
             if ($user && $user->account_status === 'suspended') {
-                if ($request->expectsJson() || $request->is('api/*')) {
-                    return response()->json([
-                        'banned' => true,
-                        'ban_reason' => $user->ban_reason ?: 'Violation of Terms of Service',
-                    ], 403)
-                    ->header('Cache-Control', 'no-cache, no-store, must-revalidate')
-                    ->header('Pragma', 'no-cache')
-                    ->header('Expires', '0');
-                }
-
                 Auth::logout();
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
 
                 $banReason = $user->ban_reason ?: 'Violation of Terms of Service';
+
+                if ($request->expectsJson() || $request->is('api/*')) {
+                    return response()->json([
+                        'banned' => true,
+                        'ban_reason' => $banReason,
+                    ], 403);
+                }
 
                 return redirect()->route('login')
                     ->with('banned', true)
@@ -36,16 +33,6 @@ class CheckAccountStatus
             }
         }
 
-        $response = $next($request);
-
-        if ($request->is('api/*') || $request->expectsJson()) {
-            if ($response instanceof \Illuminate\Http\JsonResponse) {
-                $response->header('Cache-Control', 'no-cache, no-store, must-revalidate');
-                $response->header('Pragma', 'no-cache');
-                $response->header('Expires', '0');
-            }
-        }
-
-        return $response;
+        return $next($request);
     }
 }

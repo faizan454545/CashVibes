@@ -4,19 +4,9 @@ namespace App\Services;
 
 use App\Models\Referral;
 use App\Models\User;
-use Illuminate\Support\Str;
 
 class ReferralService
 {
-    public function generateReferralCode(User $user): string
-    {
-        $code = strtoupper('CV-'.Str::random(5).'-'.rand(100, 999));
-
-        $user->update(['referral_code' => $code]);
-
-        return $code;
-    }
-
     public function applyReferral(User $newUser, string $referralCode): bool
     {
         $referrer = User::where('referral_code', $referralCode)->first();

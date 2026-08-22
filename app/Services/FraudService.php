@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Log;
 
 class FraudService
 {
@@ -100,14 +99,5 @@ class FraudService
         Cache::put($cacheKey, $attempts + 1, 3600);
 
         return false;
-    }
-
-    public function flagSuspiciousActivity(User $user, string $reason): void
-    {
-        $user->update(['account_status' => 'suspended']);
-
-        Log::channel('fraud')->warning(
-            "Suspicious activity flagged for user {$user->id}: {$reason}"
-        );
     }
 }
